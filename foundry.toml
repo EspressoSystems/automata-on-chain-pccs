@@ -10,7 +10,7 @@ solc = "0.8.27"
 optimizer = true
 optimizer_runs = 999999
 # https://github.com/foundry-rs/foundry/issues/6780
-via_ir = true
+via_ir = false
 
 # https://github.com/foundry-rs/foundry/issues/6780#issuecomment-1962319449
 # auto_detect_remappings = false

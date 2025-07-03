@@ -150,18 +150,21 @@ abstract contract PcsDao is DaoBase, SigVerifyBase {
             revert Certificate_Expired();
         }
 
+        CA caCopy = ca;
+        bytes calldata certCopy = cert;
+
         // Step 2: Check issuer and subject common names are valid
         string memory issuerName = x509Lib.getIssuerCommonName(cert);
         string memory subjectName = x509Lib.getSubjectCommonName(cert);
         string memory expectedIssuer = ROOT_CA_COMMON_NAME;
         string memory expectedSubject;
-        if (ca == CA.PLATFORM) {
+        if (caCopy == CA.PLATFORM) {
             expectedSubject = PCK_PLATFORM_CA_COMMON_NAME;
-        } else if (ca == CA.PROCESSOR) {
+        } else if (caCopy == CA.PROCESSOR) {
             expectedSubject = PCK_PROCESSOR_CA_COMMON_NAME;
-        } else if (ca == CA.SIGNING) {
+        } else if (caCopy == CA.SIGNING) {
             expectedSubject = SIGNING_COMMON_NAME;
-        } else if (ca == CA.ROOT) {
+        } else if (caCopy == CA.ROOT) {
             expectedSubject = ROOT_CA_COMMON_NAME;
         }
 
@@ -174,7 +177,7 @@ abstract contract PcsDao is DaoBase, SigVerifyBase {
 
         // Step 3: Check Revocation Status
         bytes memory rootCrlData = _fetchDataFromResolver(PCS_KEY(CA.ROOT, true), false);
-        if (ca == CA.ROOT) {
+        if (caCopy == CA.ROOT) {
             bytes memory pubKey = x509Lib.getSubjectPublicKey(cert);
             if (keccak256(pubKey) != ROOT_CA_PUBKEY_HASH) {
                 revert Root_Key_Mismatch();
@@ -183,18 +186,18 @@ abstract contract PcsDao is DaoBase, SigVerifyBase {
             uint256 serialNum = x509Lib.getSerialNumber(cert);
             bool revoked = crlLib.serialNumberIsRevoked(serialNum, rootCrlData);
             if (revoked) {
-                revert Certificate_Revoked(ca, serialNum);
+                revert Certificate_Revoked(caCopy, serialNum);
             }
         }
 
         // Step 4: Check signature
         bytes memory rootCert = _getIssuer(CA.ROOT);
-        (bytes memory tbs, bytes memory signature) = x509Lib.getTbsAndSig(cert);
+        (bytes memory tbs, bytes memory signature) = x509Lib.getTbsAndSig(certCopy);
         bytes32 digest = sha256(tbs);
         bool sigVerified;
-        if (ca == CA.ROOT) {
+        if (caCopy == CA.ROOT) {
             // the root certificate is issued by its own key
-            sigVerified = verifySignature(digest, signature, cert);
+            sigVerified = verifySignature(digest, signature, certCopy);
         } else if (rootCert.length > 0) {
             sigVerified = verifySignature(digest, signature, rootCert);
         } else {

@@ -187,14 +187,23 @@ abstract contract PckDao is DaoBase, SigVerifyBase {
         string calldata platformPceSvn,
         string calldata tcbm
     ) external returns (bytes32) {
+        string calldata qeidCopy = qeid;
+        string calldata pceidCopy = pceid;
+        string calldata platformCpuSvnCopy = platformCpuSvn;
+        string calldata platformPceSvnCopy = platformPceSvn;
+        string calldata tcbmCopy = tcbm;
         (
             bytes16 qeidBytes,
             bytes2 pceidBytes,
             bytes16 platformCpuSvnBytes,
             bytes2 platformPceSvnBytes,
             bytes18 tcbmBytes
-        ) = _parseStringInputs(qeid, pceid, platformCpuSvn, platformPceSvn, tcbm);
+        ) = _parseStringInputs(qeidCopy, pceidCopy, platformCpuSvnCopy, platformPceSvnCopy, tcbmCopy);
+       
+        return _upsertPlatformTcbs(qeidBytes, pceidBytes, platformCpuSvnBytes, platformPceSvnBytes, tcbmBytes);
+    }
 
+    function _upsertPlatformTcbs(bytes16 qeidBytes, bytes2 pceidBytes, bytes16 platformCpuSvnBytes, bytes2 platformPceSvnBytes, bytes18 tcbmBytes) internal virtual returns (bytes32) {
         bytes32 pckKey = PCK_KEY(qeidBytes, pceidBytes, tcbmBytes);
 
         bytes memory der = _fetchDataFromResolver(pckKey, false);
@@ -211,6 +220,7 @@ abstract contract PckDao is DaoBase, SigVerifyBase {
 
         return bytes32(0);
     }
+    
 
     /**
      * Queries PCK Certificate issuer chain for the input ca.
