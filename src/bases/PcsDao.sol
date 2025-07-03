@@ -143,7 +143,8 @@ abstract contract PcsDao is DaoBase, SigVerifyBase {
 
     function _validatePcsCert(CA ca, bytes calldata cert) private view returns (bytes32 hash) {
         X509Helper x509Lib = X509Helper(x509);
-
+        CA caCopy = ca;
+        bytes calldata certCopy = cert;
         // Step 1: Check whether cert has expired
         bool notExpired = x509Lib.certIsNotExpired(cert);
         if (!notExpired) {
@@ -189,12 +190,13 @@ abstract contract PcsDao is DaoBase, SigVerifyBase {
 
         // Step 4: Check signature
         bytes memory rootCert = _getIssuer(CA.ROOT);
-        (bytes memory tbs, bytes memory signature) = x509Lib.getTbsAndSig(cert);
+        (bytes memory tbs, bytes memory signature) = x509Lib.getTbsAndSig(certCopy);
         bytes32 digest = sha256(tbs);
         bool sigVerified;
-        if (ca == CA.ROOT) {
+
+        if (caCopy == CA.ROOT) {
             // the root certificate is issued by its own key
-            sigVerified = verifySignature(digest, signature, cert);
+            sigVerified = verifySignature(digest, signature, certCopy);
         } else if (rootCert.length > 0) {
             sigVerified = verifySignature(digest, signature, rootCert);
         } else {

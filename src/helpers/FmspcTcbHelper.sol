@@ -112,46 +112,47 @@ contract FmspcTcbHelper {
         bool idFound;
         bool allFound;
 
+        TcbInfoBasic memory tcbInfoCopy;
         for (uint256 y = 0; y < root.size(); y++) {
             JSONParserLib.Item memory current = tcbInfoObj[y];
             string memory decodedKey = JSONParserLib.decodeString(current.key());
             string memory val = current.value();
             if (decodedKey.eq("tcbType")) {
-                tcbInfo.tcbType = uint8(JSONParserLib.parseUint(val));
+                tcbInfoCopy.tcbType = uint8(JSONParserLib.parseUint(val));
                 tcbTypeFound = true;
             } else if (decodedKey.eq("id")) {
                 string memory idStr = JSONParserLib.decodeString(val);
                 if (idStr.eq("SGX")) {
-                    tcbInfo.id = TcbId.SGX;
+                    tcbInfoCopy.id = TcbId.SGX;
                 } else if (idStr.eq("TDX")) {
-                    tcbInfo.id = TcbId.TDX;
+                    tcbInfoCopy.id = TcbId.TDX;
                 } else {
                     revert TCBInfo_Invalid();
                 }
                 idFound = true;
             } else if (decodedKey.eq("fmspc")) {
-                tcbInfo.fmspc = bytes6(uint48(JSONParserLib.parseUintFromHex(JSONParserLib.decodeString(val))));
+                tcbInfoCopy.fmspc = bytes6(uint48(JSONParserLib.parseUintFromHex(JSONParserLib.decodeString(val))));
                 fmspcFound = true;
             } else if (decodedKey.eq("version")) {
-                tcbInfo.version = uint32(JSONParserLib.parseUint(val));
+                tcbInfoCopy.version = uint32(JSONParserLib.parseUint(val));
                 versionFound = true;
             } else if (decodedKey.eq("issueDate")) {
-                tcbInfo.issueDate = uint64(DateTimeUtils.fromISOToTimestamp(JSONParserLib.decodeString(val)));
+                tcbInfoCopy.issueDate = uint64(DateTimeUtils.fromISOToTimestamp(JSONParserLib.decodeString(val)));
                 issueDateFound = true;
             } else if (decodedKey.eq("nextUpdate")) {
-                tcbInfo.nextUpdate = uint64(DateTimeUtils.fromISOToTimestamp(JSONParserLib.decodeString(val)));
+                tcbInfoCopy.nextUpdate = uint64(DateTimeUtils.fromISOToTimestamp(JSONParserLib.decodeString(val)));
                 nextUpdateFound = true;
             } else if (decodedKey.eq("pceId")) {
-                tcbInfo.pceid = bytes2(uint16(JSONParserLib.parseUintFromHex(JSONParserLib.decodeString(val))));
+                tcbInfoCopy.pceid = bytes2(uint16(JSONParserLib.parseUintFromHex(JSONParserLib.decodeString(val))));
                 pceidFound = true;
             } else if (decodedKey.eq("tcbEvaluationDataNumber")) {
-                tcbInfo.evaluationDataNumber = uint32(JSONParserLib.parseUint(val));
+                tcbInfoCopy.evaluationDataNumber = uint32(JSONParserLib.parseUint(val));
                 evaluationFound = true;
             }
             if (versionFound) {
                 allFound =
                     (tcbTypeFound && fmspcFound && issueDateFound && nextUpdateFound && pceidFound && evaluationFound);
-                if (tcbInfo.version >= 3) {
+                if (tcbInfoCopy.version >= 3) {
                     allFound = allFound && idFound;
                 }
                 if (allFound) {
